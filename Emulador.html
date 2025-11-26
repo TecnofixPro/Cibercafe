@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emulador de Cibercafé de Diseño Gráfico</title>
+    <!-- Carga de Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de fuentes y estilo básico --><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Fondo neón/cyberpunk con degradado oscuro */
+            background: linear-gradient(135deg, #1a202c, #2d3748, #4a5568);
+            color: #e2e8f0; /* Color de texto base para contrastar con el fondo oscuro */
+            min-height: 100vh; /* Asegura que el degradado cubra toda la altura */
+        }
+        /* Ajustes para elementos que estaban en blanco para adaptarse al fondo oscuro */
+        .computer-card, #tab-settings {
+            background-color: #2d3748; /* Fondo más oscuro para las tarjetas y paneles */
+            color: #e2e8f0; /* Texto claro */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada */
+            border: 1px solid #4a5568; /* Borde sutil */
+        }
+        .computer-card {
+            transition: all 0.3s ease;
+        }
+        .status-available {
+            border-left: 8px solid #38b2ac; /* Teal más neón (Disponible) */
+        }
+        .status-busy {
+            border-left: 8px solid #58fcf3; /* Rojo vibrante (Ocupado) */
+        }
+        .status-reserved {
+            border-left: 8px solid #4b69ec; /* Amarillo más neón (Reservado) */
+        }
+        /* Ajustes de colores de texto para el header */
+        header h1 {
+            color: #81e6d9; /* Teal brillante para el título */
+            text-shadow: 0 0 8px rgba(129, 230, 217, 0.6); /* Efecto de brillo neón */
+        }
+        header p {
+            color: #a0aec0; /* Gris claro para el subtítulo */
+        }
+        /* Ajustar color del texto de la tabla de transacciones */
+        .bg-gray-50 {
+            background-color: #1a202c; /* Fondo oscuro para el encabezado de la tabla */
+            color: #e2e8f0;
+        }
+        .min-w-full thead th {
+            color: #a0aec0; /* Texto claro para los encabezados de tabla */
+        }
+        .min-w-full tbody {
+            background-color: #2d3748; /* Fondo oscuro para el cuerpo de la tabla */
+        }
+        .min-w-full tbody td {
+            color: #e2e8f0; /* Texto claro para las celdas de la tabla */
+        }
+        .min-w-full tbody tr.hover\:bg-gray-50:hover {
+            background-color: #4a5568; /* Hover oscuro */
+        }
+        .text-gray-900 { /* Para el texto de los nombres de PC en las tarjetas */
+            color: #1b26b3;
+        }
+        .text-gray-700 { /* Para títulos en paneles */
+            color: #cbd5e0;
+        }
+        .text-gray-500 { /* Para texto secundario */
+            color: #a0aec0;
+        }
+        /* Estilo para los inputs en configuración */
+        input[type="number"] {
+            background-color: #4a5568; /* Fondo oscuro para inputs */
+            border-color: #617b7f; /* Borde oscuro */
+            color: #e2e8f0; /* Texto claro */
+        }
+        input[type="number"]:focus {
+            border-color: #2d5cf5; /* Borde azul neón al enfocar */
+            box-shadow: 0 0 0 3px rgba(25, 50, 161, 0.5); /* Sombra azul al enfocar */
+        }
+        /* Ajustar las pestañas */
+        nav button {
+            color: #a0aec0; /* Color base para pestañas inactivas */
+            border-color: transparent;
+        }
+        nav button:hover {
+            border-color: #63b3ed; /* Azul claro al pasar el ratón */
+            color: #bee3f8; /* Texto más claro */
+        }
+        nav button.border-indigo-600 { /* Pestaña activa */
+            border-color: #667eea; /* Azul neón para la pestaña activa */
+            color: #bee3f8; /* Texto blanco/azul claro */
+        }
+        /* Botones */
+        .bg-indigo-600 {
+            background-color: #667eea; /* Azul neón para botones primarios */
+        }
+        .hover\:bg-indigo-700:hover {
+            background-color: #7f9cf5; /* Azul neón más claro al pasar el ratón */
+        }
+        .bg-green-500 {
+            background-color: #38b2ac; /* Verde neón para iniciar sesión */
+        }
+        .hover\:bg-green-600:hover {
+            background-color: #4fd1c5; /* Verde neón más claro */
+        }
+        .bg-red-500 {
+            background-color: #e53e3e; /* Rojo neón para finalizar sesión */
+        }
+        .hover\:bg-red-600:hover {
+            background-color: #fc8181; /* Rojo neón más claro */
+        }
+        .text-green-600 {
+            color: #48aabb; /* Verde brillante para los totales */
+        }
+        .text-red-600 {
+            color: #fc8181; /* Rojo brillante para la duración de la sesión */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="p-4 md:p-8 min-h-screen">
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold">CyberDesign Studio Admin</h1>
+            <p class="mt-1">
+                Gestión en tiempo real de estaciones de diseño.
+                <span id="user-info" class="font-medium ml-2 text-sm"></span>
+            </p>
+        </header>
+
+        <!-- Contenedor principal para las pestañas --><div class="mb-6 border-b border-gray-700"> <!-- Borde más oscuro para pestañas --><nav class="flex space-x-4" id="tabs">
+                <button data-tab="dashboard" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-200 border-indigo-600">
+                    Estaciones (Dashboard)
+                </button>
+                <button data-tab="transactions" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-200 border-transparent hover:border-blue-400">
+                    Registro de Transacciones
+                </button>
+                <button data-tab="settings" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-200 border-transparent hover:border-blue-400">
+                    Configuración de Precios
+                </button>
+            </nav>
+        </div>
+
+        <!-- Dashboard de Estaciones --><div id="tab-dashboard" class="tab-content">
+            <div id="computers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Las tarjetas de computadora se inyectarán aquí --></div>
+        </div>
+
+        <!-- Registro de Transacciones --><div id="tab-transactions" class="tab-content hidden">
+            <h2 class="text-2xl font-semibold mb-4">Transacciones Completadas</h2>
+            <div class="rounded-xl shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Estación</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Inicio</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Duración</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Servicios</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Costo Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-list" class="divide-y divide-gray-700">
+                        <tr><td colspan="5" class="px-6 py-4 text-center text-sm">Cargando transacciones...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Configuración de Precios --><div id="tab-settings" class="tab-content hidden p-4 rounded-xl shadow md:max-w-xl">
+            <h2 class="text-2xl font-semibold mb-4">Ajustar Tarifas por Hora (USD)</h2>
+            <div id="pricing-form">
+                <!-- Los campos de precios se inyectarán aquí --><div id="pricing-inputs">
+                    <div class="mb-4">
+                        <label for="ratePerHour" class="block text-sm font-medium">Tarifa de Uso por Hora (PC)</label>
+                        <input type="number" id="ratePerHour" class="mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" min="0.01" step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="ratePerPrint" class="block text-sm font-medium">Costo por Impresión (Color/Alta Calidad)</label>
+                        <input type="number" id="ratePerPrint" class="mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" min="0.01" step="0.01">
+                    </div>
+                    <div class="mb-4">
+                        <label for="ratePerScanner" class="block text-sm font-medium">Costo por Escaneo (Digitalización A3/A4)</label>
+                        <input type="number" id="ratePerScanner" class="mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" min="0.01" step="0.01">
+                    </div>
+                </div>
+
+                <button id="save-pricing-btn" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Guardar Precios
+                </button>
+                <p id="pricing-message" class="mt-3 text-sm text-center"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controles Modales (No se usa window.alert/confirm) --><div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg transform transition-all">
+            <!-- Contenido del modal inyectado por JS --></div>
+    </div>
+
+
+    <!-- Importaciones de Firebase --><script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, query, setDoc, addDoc, updateDoc, getDocs, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Establecer nivel de log para depuración de Firestore
+        setLogLevel('Debug');
+
+        // --- Variables Globales y Configuración de Firebase ---
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Variables de la aplicación
+        let cafeData = {
+            computers: {},
+            pricing: {
+                ratePerHour: 5.00,
+                ratePerPrint: 0.50,
+                ratePerScanner: 0.25,
+            },
+            transactions: []
+        };
+
+        const NUM_COMPUTERS = 8;
+        const DEFAULT_COMPUTER_NAMES = Array.from({ length: NUM_COMPUTERS }, (_, i) => `PC-${String(i + 1).padStart(2, '0')}`);
+
+        // Define las rutas base de Firestore
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'design-cafe-emulator';
+
+        // Rutas públicas (para compartir el estado del café entre administradores)
+        const getPricingDocRef = () => doc(db, 'artifacts', appId, 'public', 'data', 'cafe_settings', 'pricing');
+        const getComputersCollectionRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'computers');
+        const getTransactionsCollectionRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
+
+        // --- Utilidades de Interfaz ---
+
+        /**
+         * Muestra un modal con un mensaje personalizado.
+         * @param {string} title Título del modal.
+         * @param {string} body HTML del cuerpo del modal.
+         */
+        function showModal(title, body) {
+            const modalContainer = document.getElementById('modal-container');
+            const modalContent = document.getElementById('modal-content');
+
+            // Asegurar que el contenido del modal use colores claros sobre fondo blanco
+            modalContent.innerHTML = `
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">${title}</h3>
+                <div class="text-gray-600 mb-6">${body}</div>
+                <div class="flex justify-end">
+                    <button id="modal-close-btn" class="py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">Cerrar</button>
+                </div>
+            `;
+            document.getElementById('modal-close-btn').onclick = () => hideModal();
+            modalContainer.classList.remove('hidden');
+        }
+
+        /** Oculta el modal. */
+        function hideModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+        }
+
+        /**
+         * Función auxiliar para formatear segundos a HH:MM:SS.
+         * @param {number} totalSeconds Duración en segundos.
+         */
+        function formatDuration(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = Math.floor(totalSeconds % 60);
+
+            const pad = (num) => String(num).padStart(2, '0');
+            return `${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+
+        /**
+         * Función auxiliar para formatear un valor numérico a moneda USD.
+         * @param {number} amount Cantidad a formatear.
+         */
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+            }).format(amount);
+        }
+
+        // --- Funciones de Inicialización y Autenticación ---
+
+        /** Inicializa Firebase, autentica al usuario y carga datos iniciales. */
+        async function initFirebase() {
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Autenticación
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('user-info').textContent = `Usuario ID: ${userId}`;
+                        console.log("Firebase Auth listo. User ID:", userId);
+                        
+                        // Una vez autenticado, iniciar la carga de datos
+                        setupRealtimeListeners();
+                        initializeComputers();
+                        // Iniciar el temporizador de actualización de la UI
+                        setInterval(renderDashboard, 1000);
+
+                    } else {
+                        userId = null;
+                        isAuthReady = false;
+                        document.getElementById('user-info').textContent = 'Error de autenticación.';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error al inicializar Firebase o autenticar:", error);
+                showModal("Error de Inicialización", "No se pudo conectar a la base de datos. Por favor, revisa la consola para más detalles.");
+            }
+        }
+
+        /**
+         * Inicializa las computadoras en Firestore si no existen.
+         */
+        async function initializeComputers() {
+            if (!isAuthReady) return;
+
+            const snapshot = await getDocs(getComputersCollectionRef());
+            
+            if (snapshot.empty) {
+                console.log("Creando computadoras iniciales...");
+                for (const name of DEFAULT_COMPUTER_NAMES) {
+                    await setDoc(doc(getComputersCollectionRef(), name), {
+                        name: name,
+                        status: 'disponible',
+                        last_update: Date.now(),
+                        session: {
+                            startTime: null,
+                            userId: null,
+                            services: []
+                        }
+                    });
+                }
+                // Inicializar precios por defecto si no existen
+                await setDoc(getPricingDocRef(), cafeData.pricing, { merge: true });
+            }
+        }
+
+        /**
+         * Configura los listeners en tiempo real para precios, computadoras y transacciones.
+         */
+        function setupRealtimeListeners() {
+            if (!isAuthReady) return;
+
+            // 1. Listener de Precios
+            onSnapshot(getPricingDocRef(), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    cafeData.pricing = docSnapshot.data();
+                    console.log("Precios actualizados:", cafeData.pricing);
+                    updatePricingForm(cafeData.pricing);
+                } else {
+                    console.warn("Documento de precios no encontrado.");
+                }
+            });
+
+            // 2. Listener de Computadoras
+            onSnapshot(getComputersCollectionRef(), (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    cafeData.computers[data.name] = data;
+                });
+                renderDashboard();
+            });
+
+            // 3. Listener de Transacciones (Ordenado por hora de fin, el más reciente primero)
+            onSnapshot(getTransactionsCollectionRef(), (snapshot) => {
+                const transactions = [];
+                snapshot.forEach(doc => {
+                    transactions.push(doc.data());
+                });
+                // Ordenar en memoria por la hora de finalización (más reciente primero)
+                cafeData.transactions = transactions.sort((a, b) => b.endTime - a.endTime);
+                renderTransactionsList();
+            });
+        }
+
+        // --- Funciones de Lógica de Negocio ---
+
+        /**
+         * Inicia una sesión de uso para una computadora.
+         * @param {string} computerName Nombre/ID de la computadora.
+         */
+        async function startSession(computerName) {
+            if (!isAuthReady) return;
+
+            const computer = cafeData.computers[computerName];
+            if (computer.status !== 'disponible') {
+                showModal("Error", `La ${computerName} no está disponible para iniciar una sesión.`);
+                return;
+            }
+
+            const startTime = Date.now();
+            
+            try {
+                await updateDoc(doc(getComputersCollectionRef(), computerName), {
+                    status: 'ocupado',
+                    last_update: startTime,
+                    session: {
+                        startTime: startTime,
+                        // Generar un ID de cliente aleatorio
+                        userId: 'CLIENTE-' + Math.random().toString(36).substring(2, 9).toUpperCase(), 
+                        services: []
+                    }
+                });
+            } catch (error) {
+                console.error("Error al iniciar la sesión:", error);
+                showModal("Error de DB", "No se pudo iniciar la sesión. Inténtalo de nuevo.");
+            }
+        }
+
+        /**
+         * Finaliza una sesión, calcula el costo total y registra la transacción.
+         * @param {string} computerName Nombre/ID de la computadora.
+         */
+        async function endSession(computerName) {
+            if (!isAuthReady) return;
+
+            const computer = cafeData.computers[computerName];
+            if (computer.status !== 'ocupado' || !computer.session.startTime) {
+                showModal("Error", `La ${computerName} no tiene una sesión activa para finalizar.`);
+                return;
+            }
+
+            const endTime = Date.now();
+            const startTime = computer.session.startTime;
+            const durationMs = endTime - startTime;
+            const durationSeconds = Math.round(durationMs / 1000);
+
+            // --- CÁLCULO DE COSTO ---
+            const { ratePerHour, ratePerPrint, ratePerScanner } = cafeData.pricing;
+            
+            // Costo por tiempo (siempre se redondea hacia arriba al minuto más cercano para cobro)
+            const minutesUsed = Math.ceil(durationMs / (1000 * 60));
+            const costTime = (minutesUsed / 60) * ratePerHour;
+            
+            // Simulación de servicios (usaremos un número aleatorio para el ejemplo)
+            const prints = Math.floor(Math.random() * 5); // 0 a 4 impresiones
+            const scans = Math.floor(Math.random() * 2);  // 0 a 1 escaneo
+            
+            const costServices = (prints * ratePerPrint) + (scans * ratePerScanner);
+            const totalCost = costTime + costServices;
+
+            // 1. Registrar la Transacción
+            const transaction = {
+                computerName: computerName,
+                clientId: computer.session.userId,
+                adminId: userId,
+                startTime: startTime,
+                endTime: endTime,
+                durationSeconds: durationSeconds,
+                durationFormatted: formatDuration(durationSeconds),
+                costTime: costTime,
+                costServices: costServices,
+                totalCost: totalCost,
+                details: {
+                    prints: prints,
+                    scans: scans,
+                    ratePerHour: ratePerHour
+                },
+                timestamp: endTime // Para facilitar el orden
+            };
+
+            // 2. Limpiar el estado de la computadora
+            const computerUpdate = {
+                status: 'disponible',
+                last_update: endTime,
+                session: {
+                    startTime: null,
+                    userId: null,
+                    services: []
+                }
+            };
+            
+            try {
+                await addDoc(getTransactionsCollectionRef(), transaction);
+                await updateDoc(doc(getComputersCollectionRef(), computerName), computerUpdate);
+                
+                // Mostrar recibo/resumen
+                const receiptBody = `
+                    <p>Cliente: ${transaction.clientId}</p>
+                    <p>Duración: <span class="font-bold">${formatDuration(durationSeconds)}</span> (${minutesUsed} minutos cobrados)</p>
+                    <hr class="my-3"/>
+                    <p>Costo por Tiempo: ${formatCurrency(costTime)}</p>
+                    <p>Impresiones (${prints}x${formatCurrency(ratePerPrint)}): ${formatCurrency(prints * ratePerPrint)}</p>
+                    <p>Escaneos (${scans}x${formatCurrency(ratePerScanner)}): ${formatCurrency(scans * ratePerScanner)}</p>
+                    <hr class="my-3 font-bold"/>
+                    <p class="text-lg font-bold">Total a Cobrar: ${formatCurrency(totalCost)}</p>
+                `;
+                showModal(`Sesión Finalizada - ${computerName}`, receiptBody);
+
+            } catch (error) {
+                console.error("Error al finalizar la sesión o registrar la transacción:", error);
+                showModal("Error de Transacción", "No se pudo finalizar la sesión y registrar el pago.");
+            }
+        }
+
+        /**
+         * Actualiza las tarifas de precios en Firestore.
+         */
+        async function savePricing() {
+            if (!isAuthReady) return;
+
+            const ratePerHour = parseFloat(document.getElementById('ratePerHour').value);
+            const ratePerPrint = parseFloat(document.getElementById('ratePerPrint').value);
+            const ratePerScanner = parseFloat(document.getElementById('ratePerScanner').value);
+            const messageEl = document.getElementById('pricing-message');
+
+            if (isNaN(ratePerHour) || isNaN(ratePerPrint) || isNaN(ratePerScanner) || ratePerHour <= 0) {
+                messageEl.textContent = 'Por favor, ingresa valores válidos y positivos.';
+                messageEl.className = 'mt-3 text-sm text-center text-red-500';
+                return;
+            }
+
+            const newPricing = { ratePerHour, ratePerPrint, ratePerScanner };
+
+            try {
+                await setDoc(getPricingDocRef(), newPricing, { merge: true });
+                messageEl.textContent = '¡Precios actualizados exitosamente!';
+                messageEl.className = 'mt-3 text-sm text-center text-green-500';
+            } catch (error) {
+                console.error("Error al guardar precios:", error);
+                messageEl.textContent = 'Error al guardar. Revisa la consola.';
+                messageEl.className = 'mt-3 text-sm text-center text-red-500';
+            }
+        }
+
+        // --- Funciones de Renderizado de UI ---
+
+        /**
+         * Renderiza la cuadrícula de computadoras.
+         */
+        function renderDashboard() {
+            const grid = document.getElementById('computers-grid');
+            grid.innerHTML = '';
+            
+            // Asegurarse de renderizar en un orden predecible (por nombre)
+            const computerNames = Object.keys(cafeData.computers).sort();
+
+            computerNames.forEach(name => {
+                const computer = cafeData.computers[name];
+                const statusClass = computer.status === 'disponible' ? 'status-available'
+                                  : computer.status === 'ocupado' ? 'status-busy'
+                                  : 'status-reserved'; // Asumimos 'reservado' como tercer estado si lo deseas
+
+                let sessionDetails = '';
+                let buttonHtml = '';
+                let duration = '00:00:00';
+
+                if (computer.status === 'ocupado' && computer.session.startTime) {
+                    const elapsedMs = Date.now() - computer.session.startTime;
+                    const elapsedSeconds = Math.round(elapsedMs / 1000);
+                    duration = formatDuration(elapsedSeconds);
+                    
+                    // Cálculo de costo estimado en tiempo real
+                    const durationHours = elapsedMs / (1000 * 60 * 60);
+                    const estimatedCost = durationHours * cafeData.pricing.ratePerHour;
+
+                    sessionDetails = `
+                        <p class="text-sm text-gray-500">Cliente ID: ${computer.session.userId}</p>
+                        <p class="text-lg font-bold text-red-600 my-1">${duration}</p>
+                        <p class="text-sm text-gray-500">Costo Est.: ${formatCurrency(estimatedCost)}</p>
+                    `;
+                    buttonHtml = `
+                        <button onclick="endSessionWrapper('${name}')" class="w-full py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors mt-3 font-semibold">
+                            Finalizar Sesión
+                        </button>
+                    `;
+                } else {
+                    sessionDetails = `
+                        <p class="text-2xl font-bold text-gray-400 my-3">Disponible</p>
+                        <p class="text-sm text-gray-500">Tarifa: ${formatCurrency(cafeData.pricing.ratePerHour)}/hora</p>
+                    `;
+                    buttonHtml = `
+                        <button onclick="startSessionWrapper('${name}')" class="w-full py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors mt-3 font-semibold">
+                            Iniciar Sesión
+                        </button>
+                    `;
+                }
+
+                grid.innerHTML += `
+                    <div class="computer-card rounded-xl overflow-hidden ${statusClass} p-5">
+                        <h2 class="text-xl font-bold text-gray-900 mb-1 flex justify-between items-center">
+                            ${name}
+                            <span class="text-xs font-medium px-2 py-1 rounded-full text-white ${computer.status === 'disponible' ? 'bg-green-500' : 'bg-red-500'}">
+                                ${computer.status.toUpperCase()}
+                            </span>
+                        </h2>
+                        ${sessionDetails}
+                        ${buttonHtml}
+                    </div>
+                `;
+            });
+        }
+
+        /**
+         * Renderiza la lista de transacciones.
+         */
+        function renderTransactionsList() {
+            const list = document.getElementById('transactions-list');
+            list.innerHTML = '';
+
+            if (cafeData.transactions.length === 0) {
+                 list.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-sm">Aún no hay transacciones registradas.</td></tr>`;
+                 return;
+            }
+
+            cafeData.transactions.forEach(tx => {
+                const startTime = new Date(tx.startTime).toLocaleTimeString('es-ES');
+                const duration = tx.durationFormatted || formatDuration(tx.durationSeconds);
+                const services = `${tx.details.prints} Imp. / ${tx.details.scans} Esc.`;
+
+                list.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${tx.computerName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${startTime}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${duration}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${services}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">${formatCurrency(tx.totalCost)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        /**
+         * Rellena el formulario de precios con los datos actuales.
+         * @param {object} pricing Objeto de precios actual.
+         */
+        function updatePricingForm(pricing) {
+            document.getElementById('ratePerHour').value = pricing.ratePerHour.toFixed(2);
+            document.getElementById('ratePerPrint').value = pricing.ratePerPrint.toFixed(2);
+            document.getElementById('ratePerScanner').value = pricing.ratePerScanner.toFixed(2);
+            document.getElementById('pricing-message').textContent = '';
+        }
+
+        // --- Wrappers para Eventos de la UI y Lógica de Pestañas ---
+
+        // 1. Exponer funciones globales para que el HTML pueda llamarlas directamente desde onclick
+        window.startSessionWrapper = async (name) => {
+            await startSession(name);
+        };
+
+        window.endSessionWrapper = async (name) => {
+            await endSession(name);
+        };
+
+        // 2. Event Listeners y Lógica de Pestañas
+        function setupUIListeners() {
+            // Listener para guardar precios
+            document.getElementById('save-pricing-btn').addEventListener('click', savePricing);
+
+            // Listener para el cambio de pestañas
+            const tabsContainer = document.getElementById('tabs');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const activeClass = 'border-indigo-600';
+            const inactiveClasses = ['border-transparent', 'hover:border-blue-400'];
+
+            tabsContainer.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetTab = e.target.getAttribute('data-tab');
+
+                    // Ocultar todos los contenidos y desactivar visualmente los botones
+                    tabContents.forEach(content => content.classList.add('hidden'));
+                    tabsContainer.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove(activeClass);
+                        btn.classList.add(...inactiveClasses);
+                    });
+
+                    // Mostrar el contenido objetivo y activar visualmente el botón
+                    document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
+                    e.target.classList.add(activeClass);
+                    e.target.classList.remove(...inactiveClasses);
+                });
+            });
+        }
+
+        // --- Inicialización Principal ---
+
+        window.onload = function() {
+            initFirebase();
+            setupUIListeners();
+        };
+    </script>
+</body>
+</html>
